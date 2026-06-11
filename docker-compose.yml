@@ -11,20 +11,34 @@ services:
       - backend_data:/data
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "/app/healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   frontend:
     build:
       context: ./frontend
     environment:
       VITE_API_BASE_URL: "http://127.0.0.1:8000/api"
+      BACKEND_INTERNAL_URL: "http://backend:8000/api"
     volumes:
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules
     ports:
       - "5173:5173"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     command: npm run dev -- --host 0.0.0.0 --force
+    healthcheck:
+      test: ["CMD", "node", "/app/healthcheck.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 volumes:
   backend_data:
